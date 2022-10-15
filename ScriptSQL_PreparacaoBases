@@ -1,0 +1,350 @@
+
+------------- Preparação das bases ----------
+---------------------- Procon-------------------
+
+--- drop table #Procon
+
+select DataAtendimento, Regiao, UF, GrupoAssunto, DescricaoAssunto, DescricaoTipoAtendimento as Situacao,
+       SexoConsumidor, FaixaEtariaConsumidor
+  into #Procon
+  from ST_Procon2021
+  where GrupoAssunto in ('Banco comercial',  'Seguros (exceto Saúde)', 'Cartão de Crédito', 
+                         'Internet (Serviços e Produtos)',  'Telefonia Celular', 'TV por Assinatura',
+						 'Eletrodomésticos Linha Branca',  'Móveis', 'Aparelho Celular')
+
+--- drop table #ProconArea
+
+select DataAtendimento as Data, Regiao, UF, 
+       case 
+	      when GrupoAssunto in ('Banco comercial',  'Seguros (exceto Saúde)', 'Cartão de Crédito')
+		   then 'Serviços Financeiros' 
+		  when GrupoAssunto in ('Internet (Serviços e Produtos)',  'Telefonia Celular', 'TV por Assinatura')
+		   then 'Telecomunicacoes'
+		  when GrupoAssunto in ('Eletrodomésticos Linha Branca',  'Móveis', 'Aparelho Celular')
+		   then 'Produtos'
+		  else  ' ' 
+		end as Area, DescricaoAssunto as Assunto, Situacao,  SexoConsumidor, FaixaEtariaConsumidor
+  into #ProconArea
+  from #Procon
+
+  
+ ------- Assunto - Seguro ------
+  
+ update #ProconArea
+    set Assunto = 'Seguro'
+	where Assunto = 'Seguro de Automóvel'
+	
+ update #ProconArea
+    set Assunto = 'Seguro'
+	where Assunto = 'Seguro de Vida'
+	
+ update #ProconArea
+    set Assunto = 'Seguro'
+	where Assunto = 'Seguro Residencial'
+	
+ update #ProconArea
+    set Assunto = 'Seguro'
+	where Assunto = 'Corretora de Seguros'
+		
+ update #ProconArea
+    set Assunto = 'Seguro'
+	where Assunto = 'Outros Seguros'
+
+
+ ------- Area Telecomunicacoes  ------	
+ 
+ update #ProconArea
+    set Assunto = 'Internet'
+	where Assunto = 'Informática (Ex.:Provedor de Acesso a Internet)'
+	
+ update #ProconArea
+    set Assunto = 'TV Por Assinatura'
+	where Assunto = 'TV Por Assinatura ( Cabo, Satélite, Etc. )'
+	
+ update #ProconArea
+    set Assunto = 'Telefonia'
+	where Assunto = 'Telefonia Celular'
+
+	select distinct assunto 
+	from #ProconArea
+	where area = 'Telecomunicacoes'
+	
+ ------- Assunto  Produto  ------
+  
+ update #ProconArea
+    set Assunto = 'Moveis'
+	where Assunto like '%Moveis%'
+	
+ update #ProconArea
+    set Assunto = 'Aparelho Celular'
+	where Assunto like '%telefone%'
+	
+ update #ProconArea
+    set Assunto = 'Eletrodomésticos'
+	where Assunto like 'Fogão e Microondas'
+		
+ update #ProconArea
+    set Assunto = 'Eletrodomésticos'
+	where Assunto like 'Geladeira e Freezer'
+	
+ update #ProconArea
+    set Assunto = 'Eletrodomésticos'
+	where Assunto like 'Máquina de Lavar Roupa / Louça e Secadora'
+
+   
+------------------- Consumidor -----------------------
+
+--- drop table #Consumidor
+
+select DataAbertura, Regiao, UF, Area, Assunto, AvaliacaoReclamacao as Situacao,
+       Sexo, FaixaEtaria
+  into #Consumidor
+  from ST_Consumidor2021
+  where Area in ('Serviços Financeiros',  'Telecomunicações', 'Produtos de Telefonia e Informática', 
+                 'Produtos Eletrodomésticos e Eletrônicos',  'Demais Produtos')
+
+
+-- drop table #ConsumidorArea
+
+select DataAbertura as Data, Regiao, UF, 
+       case 
+	      when Area in ('Serviços Financeiros')
+		   then 'Serviços Financeiros' 
+		  when Area in ('Telecomunicações')
+		   then 'Telecomunicacoes'
+		  when Area in ('Produtos de Telefonia e Informática', 
+                 'Produtos Eletrodomésticos e Eletrônicos',  'Demais Produtos')
+		   then 'Produtos'
+		  else  ' ' 
+		end as Area, Assunto as Assunto, Situacao, 
+		Sexo, FaixaEtaria
+  into #ConsumidorArea
+  from #Consumidor
+  
+ ------- Assunto  Banco Comercial ------
+ 
+ update #ConsumidorArea
+    set Assunto = 'Banco Comercial'
+	where Assunto = 'Financiamentos de Veículos / Leasing'
+	
+ update #ConsumidorArea
+    set Assunto = 'Banco Comercial'
+	where Assunto = 'Investimentos / Aplicações / Câmbio / Previdência Privada'
+    
+ update #ConsumidorArea
+    set Assunto = 'Banco Comercial'
+	where Assunto = 'Caixa Eletrônico Multibanco'
+  	
+ update #ConsumidorArea
+    set Assunto = 'Banco Comercial'
+	where Assunto = 'Crédito Rural'
+	
+ update #ConsumidorArea
+    set Assunto = 'Banco Comercial'
+	where Assunto = 'Atendimento Bancário'
+	
+ update #ConsumidorArea
+    set Assunto = 'Banco Comercial'
+	where Assunto = 'Serviço de pagamento online/ via celular/ maquininha'
+	
+ update #ConsumidorArea
+    set Assunto = 'Banco Comercial'
+	where Assunto = 'Crédito Consignado / Cartão de Crédito Consignado / RMC (para beneficiários do INSS)'
+
+ update #ConsumidorArea
+    set Assunto = 'Banco Comercial'
+	where Assunto = 'Crédito Pessoal e Demais Empréstimos (exceto financiamento de imóveis e veículos)'
+	
+ update #ConsumidorArea
+    set Assunto = 'Banco Comercial'
+	where Assunto = 'Conta corrente / Salário / Poupança /Conta Aposentadoria'
+	
+ update #ConsumidorArea
+    set Assunto = 'Banco Comercial'
+	where Assunto = 'Financiamento de Imóveis'
+
+ update #ConsumidorArea
+    set Assunto = 'Banco Comercial'
+	where Assunto = 'Crédito Consignado (para servidores públicos ou trabalhadores do setor privado)'
+	
+ update #ConsumidorArea
+    set Assunto = 'Banco Comercial'
+	where Assunto = 'Cartão de Programas Sociais'
+
+delete from #ConsumidorArea
+  where Assunto = 'Banco de Dados e Cadastros de Consumidores (SPC, Serasa, SCPC etc)'
+    
+delete from #ConsumidorArea
+  where Assunto = 'Consórcio de Imoveis'
+  
+delete from #ConsumidorArea
+  where Assunto = 'Consórcios (exceto imóveis)'
+  
+delete from #ConsumidorArea
+  where Assunto = 'Cartão de Benefícios (vale transporte, alimentação, combustível, incentivos etc)'
+  
+delete from #ConsumidorArea
+  where Assunto = 'Cadastro Positivo'
+  
+delete from #ConsumidorArea
+  where Assunto = 'Consulta / Monitoramento de CPF'
+
+ ------- Assunto - Seguro ------
+  
+ update #ConsumidorArea
+    set Assunto = 'Seguro'
+	where Assunto = 'Seguro Viagem'
+	
+ update #ConsumidorArea
+    set Assunto = 'Seguro'
+	where Assunto = 'Seguro de Vida / Acidentes Pessoais / Desemprego'
+
+ update #ConsumidorArea
+    set Assunto = 'Seguro'
+	where Assunto = 'Seguro Garantia Estendida'
+	
+ update #ConsumidorArea
+    set Assunto = 'Seguro'
+	where Assunto = 'Seguros de Veículos'
+	
+ update #ConsumidorArea
+    set Assunto = 'Seguro'
+	where Assunto = 'Seguro DPVAT'
+	
+ update #ConsumidorArea
+    set Assunto = 'Seguro'
+	where Assunto = 'Seguro Habitacional / Residencial'
+	
+ update #ConsumidorArea
+    set Assunto = 'Seguro'
+	where Assunto = 'Demais Seguros (exceto habitacional)'
+
+
+ ------- Assunto Cartao de Credito ------
+	
+ update #ConsumidorArea
+    set Assunto = 'Cartão de Crédito'
+	where Assunto = 'Cartão de Crédito / Cartão de Débito / Cartão de Loja'
+
+	
+ update #ConsumidorArea
+    set Assunto = 'Cartão de Crédito'
+	where Assunto = 'Score / Pontuação de Crédito'
+
+	select distinct assunto from #ConsumidorArea 
+	where area = 'servicos financeiros'
+
+	
+	select distinct assunto from #ProconArea 
+	where area = 'servicos financeiros'
+	
+ ------- Assunto Telecomunicacoes ------
+	
+ update #ConsumidorArea
+    set Assunto = 'Internet'
+	where  Assunto = 'Internet Móvel'
+	
+ update #ConsumidorArea
+    set Assunto = 'Internet'
+	where  Assunto = 'Internet Fixa'
+	
+ update #ConsumidorArea
+    set Assunto = 'TV por Assinatura'
+	where  Assunto = 'Pacote de Serviços ( Combo )'
+	
+ update #ConsumidorArea
+    set Assunto = 'Telefonia'
+	where  Assunto = 'Telefonia Fixa'
+	
+ update #ConsumidorArea
+    set Assunto = 'Telefonia'
+	where  Assunto = 'Telefonia Móvel Pós-paga'
+	
+ update #ConsumidorArea
+    set Assunto = 'Telefonia'
+	where  Assunto = 'Telefonia Móvel Pré-paga'
+
+ ------- Assunto Produtos ------
+	
+ update #ConsumidorArea
+    set Assunto = 'Móveis'
+	where Assunto like '%Moveis%'
+
+ update #ConsumidorArea
+    set Assunto = 'Eletrodomésticos'
+	where Assunto like 'Lavadora de roupa, louça e secadora'
+	
+ update #ConsumidorArea
+    set Assunto = 'Eletrodomésticos'
+	where Assunto like 'Ar condicionado, ventilador e aquecedor'
+
+ update #ConsumidorArea
+    set Assunto = 'Eletrodomésticos'
+	where Assunto like 'Fogão, microondas, forno elétrico, depurador de ar e coifa'
+	
+ update #ConsumidorArea
+    set Assunto = 'Eletrodomésticos'
+	where Assunto like 'Refrigerador / freezer'
+	
+ update #ConsumidorArea
+    set Assunto = 'Aparelho celular'
+	where Assunto like 'Aparelho de telefone fixo / interfone'
+
+ update #ConsumidorArea
+    set Assunto = 'Eletrodomésticos'
+	where Assunto like 'Televisão'
+	
+ update #ConsumidorArea
+    set Assunto = 'Eletrodomésticos'
+	where Assunto like 'Eletroportáteis ( batedeira, liquidificador, umidificador, secador, cafeteira etc )'
+	
+  
+insert into ReclamacaoConsumidor
+  select Data, Regiao, UF, 
+         SexoConsumidor as Sexo, FaixaEtariaConsumidor as FaixaEtaria,
+         Area, Assunto,
+         case  
+           when Situacao in ('Abertura Direta de Reclamação', 'Reclamação de Ofício', 'Simples Consulta')
+	         then 'Resolvida'
+	  	   when Situacao in ('Cálculo')
+		     then 'Em Atendimento'
+	       else 'Não Resolvida'
+	     end as Situacao, 
+	     convert(varchar(20), 'Procon') as Origem
+  from #ProconArea
+
+insert into ReclamacaoConsumidor 
+  select convert(date, Data) as Data, Regiao, UF,
+         Sexo, FaixaEtaria, 
+		 Area, Assunto, 
+         case  
+		   when Situacao = 'Não Avaliada' 
+		     then 'Em Atendimento'
+		   when Situacao is null
+		      then 'Em Atendimento'
+		else Situacao		
+	  end as Situacao,
+	  convert(varchar(20), 'Consumidor') as Origem
+  from #ConsumidorArea
+
+  ------ Atualiza Regiao -------
+
+  update ReclamacaoConsumidor
+    set Regiao = 'Sul'
+	where Regiao = 'S'
+	
+  update ReclamacaoConsumidor
+    set Regiao = 'Sudeste'
+	where Regiao = 'SE'
+	
+  update ReclamacaoConsumidor
+    set Regiao = 'Centro-oeste'
+	where Regiao = 'CO'
+	
+  update ReclamacaoConsumidor
+    set Regiao = 'Nordeste'
+	where Regiao = 'NE'
+
+  update ReclamacaoConsumidor
+    set Regiao = 'Norte'
+	where Regiao = 'N'
