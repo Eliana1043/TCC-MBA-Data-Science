@@ -1,0 +1,146 @@
+########################################
+#
+#   BIBLIOTECAS 
+#
+########################################
+
+library(tidyverse) 
+library(cluster) 
+library(dendextend) 
+library(factoextra) 
+library(fpc) 
+library(gridExtra) 
+library(readxl)
+
+#######################################
+#
+#    UF - Consumidor.gov
+#
+#######################################
+
+# Carregar base UF - Consumidor
+
+uf <- read.table("dados/ReclamacaoNaoResolvida_Con.csv", sep = ";", header = T, dec = ",")
+rownames(uf) <- uf[,1]
+uf <- uf[,-1]
+
+uf.padronizado <- scale(uf)
+
+# K_MEANS de 3 a 6 grupos
+
+uf.k3 <- kmeans(uf.padronizado, centers = 3)
+uf.k4 <- kmeans(uf.padronizado, centers = 4)
+uf.k5 <- kmeans(uf.padronizado, centers = 5)
+uf.k6 <- kmeans(uf.padronizado, centers = 6)
+
+
+# Graficos
+
+G1 <- fviz_cluster(uf.k3, geom = "point",  data = uf.padronizado) + ggtitle("k = 3")
+G2 <- fviz_cluster(uf.k4, geom = "point",  data = uf.padronizado) + ggtitle("k = 4")
+G3 <- fviz_cluster(uf.k5, geom = "point",  data = uf.padronizado) + ggtitle("k = 5")
+G4 <- fviz_cluster(uf.k6, geom = "point",  data = uf.padronizado) + ggtitle("k = 6")
+
+
+grid.arrange(G1, G2, G3, G4, nrow = 2)
+
+
+# Método ELBOW 
+
+fviz_nbclust(uf.padronizado, FUN = hcut, method = "wss")
+
+
+uf2 <- read.table("dados/ReclamacaoNaoResolvida_Con.csv", sep = ";", header = T, dec = ",")
+uffit <- data.frame(uf.k6$cluster)
+
+UFFinalCon <-  cbind(uf2, uffit)
+
+view (UFFinalCon)
+
+
+# Analise Descritiva das médias agrupadas
+
+mediagrupo <- UFFinalCon %>% 
+  group_by(uf.k5.cluster) %>% 
+  summarise(n = n(),
+            Telefonia = mean(Telefonia), 
+            Internet = mean(Internet), 
+            TV = mean(TV),
+            CartaoCredito = mean(CartaoCredito),
+            Seguro = mean(Seguro),
+            Banco = mean(Banco),
+            AparelhoCelular = mean(AparelhoCelular),
+            Eletrodomestico = mean(Eletrodomestico),
+            Moveis = mean(Moveis) )
+mediagrupo
+
+
+###################################
+#
+#    UF - Procon
+#
+###################################
+
+# Carregar base UF - Procon
+
+ufprocon <- read.table("dados/ReclamacaoNaoResolvida_Pro.csv", sep = ";", header = T, dec = ",")
+rownames(ufprocon) <- ufprocon[,1]
+ufprocon <- ufprocon[,-1]
+
+ufprocon.padronizado <- scale(ufprocon)
+
+# K_MEANS de 3 a 6 grupos
+
+ufprocon.k3 <- kmeans(ufprocon.padronizado, centers = 3)
+ufprocon.k4 <- kmeans(ufprocon.padronizado, centers = 4)
+ufprocon.k5 <- kmeans(ufprocon.padronizado, centers = 5)
+ufprocon.k6 <- kmeans(ufprocon.padronizado, centers = 6)
+
+
+# Graficos
+
+G1Pro <- fviz_cluster(ufprocon.k3, geom = "point",  data = ufprocon.padronizado) + ggtitle("k = 3")
+G2Pro <- fviz_cluster(ufprocon.k4, geom = "point",  data = ufprocon.padronizado) + ggtitle("k = 4")
+G3Pro <- fviz_cluster(ufprocon.k5, geom = "point",  data = ufprocon.padronizado) + ggtitle("k = 5")
+G4Pro <- fviz_cluster(ufprocon.k6, geom = "point",  data = ufprocon.padronizado) + ggtitle("k = 6")
+
+
+grid.arrange(G1Pro, G2Pro, G3Pro, G4Pro, nrow = 2)
+
+
+# Método ELBOW 
+
+fviz_nbclust(ufprocon.padronizado, FUN = hcut, method = "wss")
+
+
+ufprocon2 <- read.table("dados/ReclamacaoNaoResolvida_Pro.csv", sep = ";", header = T, dec = ",")
+ufproconfit <- data.frame(ufprocon.k6$cluster)
+
+
+UFFinalPro <-  cbind(ufprocon2, ufproconfit)
+
+view (UFFinalPro)
+
+
+# Analise Descritiva das médias agrupadas
+
+mediagrupoPro <- UFFinalPro %>% 
+  group_by(ufprocon.k6.cluster) %>% 
+  summarise(n = n(),
+            Telefonia = mean(Telefonia), 
+            Internet = mean(Internet), 
+            TV = mean(TV),
+            CartaoCredito = mean(CartaoCredito),
+            Seguro = mean(Seguro),
+            Banco = mean(Banco),
+            AparelhoCelular = mean(AparelhoCelular),
+            Eletrodomestico = mean(Eletrodomestico),
+            Moveis = mean(Moveis) )
+
+mediagrupoPro
+
+
+
+
+
+
