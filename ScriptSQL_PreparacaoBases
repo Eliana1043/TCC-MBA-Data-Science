@@ -297,8 +297,32 @@ delete from #ConsumidorArea
  update #ConsumidorArea
     set Assunto = 'Eletrodomésticos'
 	where Assunto like 'Eletroportáteis ( batedeira, liquidificador, umidificador, secador, cafeteira etc )'
+
+------ Criar tabela --------
+
+CREATE TABLE [dbo].[ReclamacaoConsumidor](
+	[ReclamacaoID] [int] IDENTITY(1,1) NOT NULL,
+	[Data] [datetime] NULL,
+	[Regiao] [varchar](30) NULL,
+	[UF] [varchar](2) NULL,
+	[Sexo] [char](1) NULL,
+	[FaixaEtaria] [varchar](50) NULL,
+	[Area] [varchar](50) NOT NULL,
+	[Assunto] [varchar](255) NULL,
+	[Situacao] [varchar](50) NULL,
+	[Origem] [varchar](20) NULL,
+	[NaoResolvida] [int] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[ReclamacaoID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
 	
-  
+----- Inserir Dados na tabela --------
+
+------- Procon -------
+
 insert into ReclamacaoConsumidor
   select Data, Regiao, UF, 
          SexoConsumidor as Sexo, FaixaEtariaConsumidor as FaixaEtaria,
@@ -312,6 +336,8 @@ insert into ReclamacaoConsumidor
 	     end as Situacao, 
 	     convert(varchar(20), 'Procon') as Origem
   from #ProconArea
+
+------- Consumidor -------
 
 insert into ReclamacaoConsumidor 
   select convert(date, Data) as Data, Regiao, UF,
@@ -348,3 +374,163 @@ insert into ReclamacaoConsumidor
   update ReclamacaoConsumidor
     set Regiao = 'Norte'
 	where Regiao = 'N'
+
+
+------ Atualiza Nao Resolvida -----
+
+  update ReclamacaoConsumidor
+    set NaoResolvida = 
+	      case 
+		     when Situacao = 'Nao Resolvida'
+			   then 1 
+			   else 0
+		  end
+
+------- Agrupamento UF / Assunto - Procon   --------
+
+--- drop table #TotalPro
+
+ select UF,  Assunto, count(*) as Qtde
+  into #TotalPro
+  from ReclamacaoConsumidor
+  where Origem = 'Procon' 
+  group by UF, Assunto
+	  
+
+-- drop table #TotalAssunto
+
+ select UF, Assunto, count(*) as NaoResolvida
+   into #TotalAssuntoPro
+   from ReclamacaoConsumidor
+   where Situacao = 'Nao Resolvida' 
+     and Origem = 'Procon' 
+   group by UF, Assunto
+   
+
+---- Calcula Percentual----
+
+  select a.UF, a.Assunto,
+       convert(decimal(8,2), 
+	  (convert(decimal(8,2), b.naoresolvida ) / convert(decimal(8,2), a.Qtde) ) * 100) as Perc
+  into #UFAssuntoPro
+  from #TotalPro        a
+  join #TotalAssuntoPro b on a.uf       = b.uf and
+                             a.Assunto = b.Assunto
+
+
+----- Criar tabela -----
+
+CREATE TABLE [dbo].[ReclamacaoNaoResolvida_Pro](
+	[UF] [varchar](2) NULL,
+	[Telefonia] [decimal](8, 2) NULL,
+	[Internet] [decimal](8, 2) NULL,
+	[TV] [decimal](8, 2) NULL,
+	[CartaoCredito] [decimal](8, 2) NULL,
+	[Seguro] [decimal](8, 2) NULL,
+	[Banco] [decimal](8, 2) NULL,
+	[AparelhoCelular] [decimal](8, 2) NULL,
+	[Eletrodomestico] [decimal](8, 2) NULL,
+	[Moveis] [decimal](8, 2) NULL	
+) ON [PRIMARY]
+GO
+
+----- Inserir na tabela -----
+
+insert into  ReclamacaoNaoResolvida_Pro
+  select UF,
+       min(case when a.Assunto  = 'Telefonia'      
+	            then a.Perc end) as Telefonia,
+	   min(case when a.Assunto  = 'Internet'      
+	            then a.Perc end) as Internet,
+	   min(case when a.Assunto  = 'TV por Assinatura' 
+	            then a.Perc end) as TV,
+	   min(case when a.Assunto  = 'Cartão de Crédito'  
+	            then a.Perc end) as CartaoCredito,
+	   min(case when a.Assunto  = 'Seguro'         
+	            then a.Perc end) as Seguro,
+       min(case when a.Assunto  = 'Banco Comercial'    
+	            then a.Perc end) as Banco,
+	   min(case when a.Assunto  = 'Aparelho Celular' 
+	            then a.Perc end) as AparelhoCelular,
+	   min(case when a.Assunto  = 'Eletrodomesticos' 
+	            then a.Perc end) as Eletrodomestico,
+	   min(case when a.Assunto  = 'Móveis'       
+	            then a.Perc end) as Moveis
+   from #UFAssuntoPro  a
+   group by UF
+
+
+------- Agrupamento UF / Assunto - Consumidor --------
+
+--- drop table #TotalCon
+
+ select UF,  Assunto, count(*) as Qtde
+  into #TotalCon
+  from ReclamacaoConsumidor
+  where origem = 'Consumidor' 
+  group by UF, Assunto
+	  
+
+-- drop table #TotalAssunto
+
+ select UF, Assunto, count(*) as NaoResolvida
+   into #TotalAssuntoCon
+   from ReclamacaoConsumidor
+   where Situacao = 'Nao Resolvida' 
+     and Origem = 'Consumidor' 
+   group by UF, Assunto
+   
+
+---- Calcula Percentual----
+
+  select a.UF, a.Assunto,
+       convert(decimal(8,2), 
+	  (convert(decimal(8,2), b.naoresolvida ) / convert(decimal(8,2), a.Qtde) ) * 100) as Perc
+  into #UFAssuntoCon
+  from #TotalCon        a
+  join #TotalAssuntoCon b on a.uf       = b.uf and
+                             a.Assunto = b.Assunto
+
+
+----- Criar tabela -----
+
+CREATE TABLE [dbo].[ReclamacaoNaoResolvida_Con](
+	[UF] [varchar](2) NULL,
+	[Telefonia] [decimal](8, 2) NULL,
+	[Internet] [decimal](8, 2) NULL,
+	[TV] [decimal](8, 2) NULL,
+	[CartaoCredito] [decimal](8, 2) NULL,
+	[Seguro] [decimal](8, 2) NULL,
+	[Banco] [decimal](8, 2) NULL,
+	[AparelhoCelular] [decimal](8, 2) NULL,
+	[Eletrodomestico] [decimal](8, 2) NULL,
+	[Moveis] [decimal](8, 2) NULL	
+) ON [PRIMARY]
+GO
+
+----- Inserir na tabela -----
+
+insert into  ReclamacaoNaoResolvida_Con
+select UF,
+       min(case when a.Assunto  = 'Telefonia'      
+	            then a.Perc end) as Telefonia,
+	   min(case when a.Assunto  = 'Internet'      
+	            then a.Perc end) as Internet,
+	   min(case when a.Assunto  = 'TV por Assinatura' 
+	            then a.Perc end) as TV,
+	   min(case when a.Assunto  = 'Cartão de Crédito'  
+	            then a.Perc end) as CartaoCredito,
+	   min(case when a.Assunto  = 'Seguro'         
+	            then a.Perc end) as Seguro,
+       min(case when a.Assunto  = 'Banco Comercial'    
+	            then a.Perc end) as Banco,
+	   min(case when a.Assunto  = 'Aparelho Celular' 
+	            then a.Perc end) as AparelhoCelular,
+	   min(case when a.Assunto  = 'Eletrodomesticos' 
+	            then a.Perc end) as Eletrodomestico,
+	   min(case when a.Assunto  = 'Móveis'       
+	            then a.Perc end) as Moveis
+   from #UFAssuntoCon  a
+   group by UF
+
+
